@@ -35,49 +35,34 @@ Weights: `w₁=0.4, w₂=0.3, w₃=0.2, w₄=0.1`. Score is 0–100; status labe
 
 ## Current Project State (as of Feb 17, 2026)
 
-### ✅ What Exists (Phase 1 — Partial)
+### ✅ Phase 1: Core Monitoring — COMPLETE
 
 | File | Status | Purpose |
 |------|--------|---------|
-| `src/core/tokenizer.py` | ✅ Written | Token counting via `tiktoken` (cl100k_base fallback) |
-| `src/core/scorer.py` | ✅ Written | CHS calculation with weighted formula, status labels |
-| `src/tools/metrics.py` | ✅ Written | `get_token_metrics()` — token counts, utilization ratio |
-| `src/tools/analyze.py` | ✅ Written | `analyze_context_health()` — composite score (Phase 1: utilization only) |
-| `src/resources/health.py` | ✅ Written | In-memory health state store with get/update |
-| `src/server.py` | ✅ Written | FastMCP server with 2 tools + 1 resource registered |
-| `tests/test_phase1.py` | ✅ Written | Unit tests for tokenizer, scorer, metrics, analyze |
-| `pyproject.toml` | ✅ Written | Project metadata and dependencies |
+| `src/server.py` | ✅ Verified | FastMCP server with 2 tools + 1 resource. Inlined tool logic. |
+| `src/core/tokenizer.py` | ✅ Verified | Token counting via `tiktoken` (cl100k_base fallback) |
+| `src/core/scorer.py` | ✅ Verified | CHS calculation with weighted formula, status labels |
+| `src/tools/metrics.py` | ✅ Verified | `get_token_metrics()` — token counts, utilization ratio, flags |
+| `src/tools/analyze.py` | ✅ Verified | `analyze_context_health()` — composite score (Phase 1: utilization only) |
+| `src/resources/health.py` | ✅ Verified | In-memory health state store with get/update |
+| `tests/test_phase1.py` | ✅ 4/4 pass | Unit tests for tokenizer, scorer, metrics, analyze |
+| `pyproject.toml` | ✅ Configured | Hatch build, uv-compatible, sentence-transformers in optional deps |
 | `mcp.json` | ✅ Written | MCP server manifest |
-| `README.md` | ✅ Written | Basic usage documentation |
-| `HANDOVER.md` | ✅ Written | Full architecture spec and roadmap |
 
-### 🔴 Critical Issues Blocking Execution
+**Verification results:**
+- 4/4 unit tests pass (`uv run python -m pytest tests/ -v`)
+- Server initializes with tools: `get_token_metrics`, `analyze_context_health`
 
-1. **Missing `__init__.py` files** — No `__init__.py` in `src/`, `src/core/`, `src/tools/`, `src/resources/`, `src/prompts/`, or `tests/`. Python cannot treat these as packages.
-2. **Broken imports in `server.py`** — Uses `from src.tools.metrics import ...` (absolute). Should use relative imports or the project must be installed as a package.
-3. **Unused import in `metrics.py`** — `from mcp.server.fastmcp import FastMCP` is imported but never used.
-4. **`sentence-transformers` not installed** — Listed in `pyproject.toml` but deferred during setup (it pulls PyTorch ~108MB). Not needed until Phase 2.
-5. **No `src/storage/` directory** — `HANDOVER.md` specifies `src/storage/metrics_store.py` but directory doesn't exist.
-6. **No `src/core/detector.py`** — Planned rot pattern detection engine not created yet.
-
-### 🟡 What Remains (by Phase)
-
-#### Phase 1 — Fix & Verify (immediate)
-- [ ] Add `__init__.py` files to all packages
-- [ ] Fix import paths in `server.py` (use relative imports consistently)
-- [ ] Remove unused `FastMCP` import from `metrics.py`
-- [ ] Run and pass unit tests
-- [ ] Verify MCP server starts via `mcp run src/server.py`
+### 🟡 What Remains
 
 #### Phase 2 — Rot Detection
-- [ ] Install `sentence-transformers` for embedding-based relevance scoring
+- [ ] Install `sentence-transformers` (`uv pip install -e ".[phase2]"`)
 - [ ] Create `src/core/detector.py` — rot pattern detection engine
 - [ ] Implement `score_relevance_decay` tool (embedding cosine similarity vs. original goal)
 - [ ] Add redundancy detection (near-duplicate content finder)
 - [ ] Build positional risk analysis ("Lost-in-the-Middle" detection)
 - [ ] Implement `detect_context_rot` tool (multi-signal analysis)
-- [ ] Create `rot://alerts/active` resource
-- [ ] Create `src/resources/alerts.py`
+- [ ] Create `rot://alerts/active` resource + `src/resources/alerts.py`
 
 #### Phase 3 — Remediation
 - [ ] Implement `recommend_pruning` tool
@@ -89,8 +74,7 @@ Weights: `w₁=0.4, w₂=0.3, w₃=0.2, w₄=0.1`. Score is 0–100; status labe
 
 #### Phase 4 — Production Polish
 - [ ] Add Streamable HTTP transport
-- [ ] Publish to MCP registry
-- [ ] Publish to PyPI
+- [ ] Publish to MCP registry + PyPI
 - [ ] Record demo video
 
 ---
@@ -99,14 +83,14 @@ Weights: `w₁=0.4, w₂=0.3, w₃=0.2, w₄=0.1`. Score is 0–100; status labe
 
 | Layer | Choice | Status |
 |-------|--------|--------|
-| MCP SDK | `mcp` (official Python SDK via `FastMCP`) | ✅ Installed |
-| LLM | Google Gemini (`google-genai`) | ✅ Installed (unused yet) |
-| Embeddings | `sentence-transformers` (`all-MiniLM-L6-v2`) | ❌ Not installed |
+| MCP SDK | `mcp` (FastMCP) | ✅ Installed & used |
+| LLM | Google Gemini (`google-genai`) | ✅ Installed (unused until Phase 3) |
+| Embeddings | `sentence-transformers` | ❌ Optional dep, Phase 2 |
 | Token Counting | `tiktoken` | ✅ Installed & used |
-| Vector Similarity | NumPy cosine similarity | ✅ Installed (unused yet) |
-| Storage | SQLite / in-memory | 🟡 In-memory only |
-| Transport | STDIO (primary) + Streamable HTTP (planned) | 🟡 STDIO only |
-| Package Manager | `uv` | ✅ Used for venv + pip |
+| Vector Similarity | NumPy | ✅ Installed (unused until Phase 2) |
+| Storage | In-memory (SQLite planned Phase 3) | 🟡 In-memory only |
+| Transport | STDIO | 🟡 HTTP planned Phase 4 |
+| Package Manager | `uv` | ✅ Active |
 
 ---
 
@@ -115,19 +99,25 @@ Weights: `w₁=0.4, w₂=0.3, w₃=0.2, w₄=0.1`. Score is 0–100; status labe
 ```
 context-rot-monitor/
 ├── src/
-│   ├── server.py              # MCP server entry point (FastMCP)
+│   ├── __init__.py
+│   ├── server.py              # MCP entry point (FastMCP, 2 tools, 1 resource)
 │   ├── core/
+│   │   ├── __init__.py
 │   │   ├── tokenizer.py       # tiktoken wrapper
 │   │   └── scorer.py          # CHS calculation
 │   ├── tools/
-│   │   ├── metrics.py         # get_token_metrics tool logic
-│   │   └── analyze.py         # analyze_context_health tool logic
+│   │   ├── __init__.py
+│   │   ├── metrics.py         # get_token_metrics logic
+│   │   └── analyze.py         # analyze_context_health logic
 │   ├── resources/
-│   │   └── health.py          # rot://health/current state store
-│   └── prompts/               # (empty — Phase 3)
+│   │   ├── __init__.py
+│   │   └── health.py          # rot://health/current state
+│   └── prompts/
+│       └── __init__.py        # (empty — Phase 3)
 ├── tests/
-│   └── test_phase1.py         # Unit tests for Phase 1
-├── pyproject.toml              # Project config
+│   ├── __init__.py
+│   └── test_phase1.py         # 4 unit tests (all passing)
+├── pyproject.toml              # uv + hatch config
 ├── mcp.json                    # MCP manifest
 ├── HANDOVER.md                 # Full architecture spec
 ├── README.md                   # Usage docs
@@ -136,20 +126,23 @@ context-rot-monitor/
 
 ---
 
-## How to Run (once issues are fixed)
+## How to Run
 
 ```bash
-# Install dependencies
-uv venv && uv pip install -e .
+# Install (editable, Phase 1 only)
+uv pip install -e .
 
-# Run MCP server (STDIO transport)
-mcp run src/server.py
+# Install with Phase 2 deps (sentence-transformers + torch)
+uv pip install -e ".[phase2]"
 
 # Run tests
-python -m pytest tests/
+uv run python -m pytest tests/ -v
 
-# Inspect with MCP Inspector
-npx @anthropic-ai/mcp-inspector
+# Verify server loads
+uv run python -c "from src.server import mcp; print(mcp.name)"
+
+# Run MCP server (STDIO transport)
+uv run python -m src.server
 ```
 
 ---
@@ -168,8 +161,9 @@ npx @anthropic-ai/mcp-inspector
 
 ## Key Design Decisions
 
-1. **Provider-agnostic LLM** — Gemini is default but easily swappable via dependency injection
-2. **Lightweight Phase 1** — Only token utilization scoring; no heavy ML dependencies
-3. **In-memory first** — SQLite persistence deferred to Phase 3
-4. **FastMCP** — Uses the high-level `FastMCP` API for cleaner tool/resource registration
-5. **Composite scoring** — Weighted formula allows tuning per-deployment
+1. **Provider-agnostic LLM** — Gemini default, easily swappable
+2. **Lightweight Phase 1** — Only token utilization; no heavy ML deps
+3. **In-memory first** — SQLite deferred to Phase 3
+4. **FastMCP** — High-level API for cleaner tool/resource registration
+5. **Absolute imports** — All files use `from src.` imports, package installed via `uv pip install -e .`
+6. **`sentence-transformers` optional** — Avoids 108MB PyTorch download until Phase 2
