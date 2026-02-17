@@ -1,0 +1,40 @@
+{
+  "name": "context-rot-monitor",
+  "version": "0.1.0",
+  "description": "Monitors and remediates context degradation in LLM agent systems.",
+  "tools": [
+    {
+      "name": "analyze_context_health",
+      "description": "Compute composite health score for current context",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "context_text": { "type": "string" },
+          "step_number": { "type": "integer" },
+          "model_name": { "type": "string" }
+        },
+        "required": ["context_text"]
+      }
+    },
+    {
+      "name": "get_token_metrics",
+      "description": "Get token counts and utilization metrics",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "context_text": { "type": "string" },
+          "max_window_size": { "type": "integer" }
+        },
+        "required": ["context_text"]
+      }
+    }
+  ],
+  "resources": [
+    {
+      "uri": "rot://health/current",
+      "name": "Current Context Health",
+      "description": "Real-time Context Health Score (0–100)",
+      "mimeType": "application/json"
+    }
+  ]
+}
