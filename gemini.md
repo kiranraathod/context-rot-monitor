@@ -18,8 +18,8 @@ An **MCP (Model Context Protocol) Server** that monitors, scores, and remediates
 MCP Host (Claude, VS Code, Cursor, Gemini CLI, Codex)
   └── MCP Client (JSON-RPC 2.0 over STDIO or HTTP)
         └── Context Rot Monitor Server
-              ├── Tools (6 planned, 2 implemented)
-              ├── Resources (4 planned, 1 implemented)
+              ├── Tools (6 planned, 3 implemented)
+              ├── Resources (4 planned, 2 implemented)
               └── Prompts (2 planned, 0 implemented)
 ```
 
@@ -33,36 +33,23 @@ Weights: `w₁=0.4, w₂=0.3, w₃=0.2, w₄=0.1`. Score is 0–100; status labe
 
 ---
 
-## Current Project State (as of Feb 17, 2026)
+## Current Project State (as of Feb 18, 2026)
 
-### ✅ Phase 1: Core Monitoring — COMPLETE
+### ✅ Phase 1: Core Monitoring — COMPLETE & VERIFIED
+- **Metric**: Token Utilization
+- **Tools**: `get_token_metrics`, `analyze_context_health`
+- **Resource**: `rot://health/current`
+- **Status**: Fully implemented, tested, and integrated.
 
-| File | Status | Purpose |
-|------|--------|---------|
-| `src/server.py` | ✅ Verified | FastMCP server with 2 tools + 1 resource. Inlined tool logic. |
-| `src/core/tokenizer.py` | ✅ Verified | Token counting via `tiktoken` (cl100k_base fallback) |
-| `src/core/scorer.py` | ✅ Verified | CHS calculation with weighted formula, status labels |
-| `src/tools/metrics.py` | ✅ Verified | `get_token_metrics()` — token counts, utilization ratio, flags |
-| `src/tools/analyze.py` | ✅ Verified | `analyze_context_health()` — composite score (Phase 1: utilization only) |
-| `src/resources/health.py` | ✅ Verified | In-memory health state store with get/update |
-| `tests/test_phase1.py` | ✅ 4/4 pass | Unit tests for tokenizer, scorer, metrics, analyze |
-| `pyproject.toml` | ✅ Configured | Hatch build, uv-compatible, sentence-transformers in optional deps |
-| `mcp.json` | ✅ Written | MCP server manifest |
-
-**Verification results:**
-- 4/4 unit tests pass (`uv run python -m pytest tests/ -v`)
-- Server initializes with tools: `get_token_metrics`, `analyze_context_health`
+### ✅ Phase 2: Rot Detection — COMPLETE & VERIFIED
+- **Metric**: Semantic Relevance + Redundancy
+- **Tools**: 
+    - `detect_context_rot`: Deep-dive analysis (Relevance, Redundancy, Positional Risk)
+    - `analyze_context_health`: Updated to use real semantic scores when `goal` is provided.
+- **Resource**: `rot://alerts/active` (Auto-alerts on drift/redundancy)
+- **Logic**: `ContextRotDetector` using `sentence-transformers` (all-MiniLM-L6-v2) for embedding-based analysis.
 
 ### 🟡 What Remains
-
-#### Phase 2 — Rot Detection
-- [ ] Install `sentence-transformers` (`uv pip install -e ".[phase2]"`)
-- [ ] Create `src/core/detector.py` — rot pattern detection engine
-- [ ] Implement `score_relevance_decay` tool (embedding cosine similarity vs. original goal)
-- [ ] Add redundancy detection (near-duplicate content finder)
-- [ ] Build positional risk analysis ("Lost-in-the-Middle" detection)
-- [ ] Implement `detect_context_rot` tool (multi-signal analysis)
-- [ ] Create `rot://alerts/active` resource + `src/resources/alerts.py`
 
 #### Phase 3 — Remediation
 - [ ] Implement `recommend_pruning` tool
@@ -84,10 +71,10 @@ Weights: `w₁=0.4, w₂=0.3, w₃=0.2, w₄=0.1`. Score is 0–100; status labe
 | Layer | Choice | Status |
 |-------|--------|--------|
 | MCP SDK | `mcp` (FastMCP) | ✅ Installed & used |
-| LLM | Google Gemini (`google-genai`) | ✅ Installed (unused until Phase 3) |
-| Embeddings | `sentence-transformers` | ❌ Optional dep, Phase 2 |
+| LLM | Google Gemini (`google-genai`) | ✅ Installed (aiming for Phase 3) |
+| Embeddings | `sentence-transformers` | ✅ Installed & used (Phase 2) |
 | Token Counting | `tiktoken` | ✅ Installed & used |
-| Vector Similarity | NumPy | ✅ Installed (unused until Phase 2) |
+| Vector Similarity | `scikit-learn` | ✅ Installed & used (Phase 2) |
 | Storage | In-memory (SQLite planned Phase 3) | 🟡 In-memory only |
 | Transport | STDIO | 🟡 HTTP planned Phase 4 |
 | Package Manager | `uv` | ✅ Active |
@@ -100,23 +87,27 @@ Weights: `w₁=0.4, w₂=0.3, w₃=0.2, w₄=0.1`. Score is 0–100; status labe
 context-rot-monitor/
 ├── src/
 │   ├── __init__.py
-│   ├── server.py              # MCP entry point (FastMCP, 2 tools, 1 resource)
+│   ├── server.py              # MCP entry point (FastMCP, 3 tools, 2 resources)
 │   ├── core/
 │   │   ├── __init__.py
 │   │   ├── tokenizer.py       # tiktoken wrapper
-│   │   └── scorer.py          # CHS calculation
+│   │   ├── scorer.py          # CHS calculation
+│   │   └── detector.py        # Rot detection logic (embeddings/redundancy)
 │   ├── tools/
 │   │   ├── __init__.py
 │   │   ├── metrics.py         # get_token_metrics logic
-│   │   └── analyze.py         # analyze_context_health logic
+│   │   ├── analyze.py         # analyze_context_health logic
+│   │   └── detect.py          # detect_context_rot logic
 │   ├── resources/
 │   │   ├── __init__.py
-│   │   └── health.py          # rot://health/current state
+│   │   ├── health.py          # rot://health/current state
+│   │   └── alerts.py          # rot://alerts/active state
 │   └── prompts/
 │       └── __init__.py        # (empty — Phase 3)
 ├── tests/
 │   ├── __init__.py
-│   └── test_phase1.py         # 4 unit tests (all passing)
+│   ├── test_phase1.py         # Unit tests for Phase 1
+│   └── test_phase2.py         # Unit tests for Phase 2
 ├── pyproject.toml              # uv + hatch config
 ├── mcp.json                    # MCP manifest
 ├── HANDOVER.md                 # Full architecture spec
@@ -129,10 +120,7 @@ context-rot-monitor/
 ## How to Run
 
 ```bash
-# Install (editable, Phase 1 only)
-uv pip install -e .
-
-# Install with Phase 2 deps (sentence-transformers + torch)
+# Install with all dependencies (Phase 1 + 2)
 uv pip install -e ".[phase2]"
 
 # Run tests
@@ -162,8 +150,7 @@ uv run python -m src.server
 ## Key Design Decisions
 
 1. **Provider-agnostic LLM** — Gemini default, easily swappable
-2. **Lightweight Phase 1** — Only token utilization; no heavy ML deps
+2. **Phase 2 Intelligence** — Uses `sentence-transformers` for local, fast semantic analysis (no API costs).
 3. **In-memory first** — SQLite deferred to Phase 3
 4. **FastMCP** — High-level API for cleaner tool/resource registration
 5. **Absolute imports** — All files use `from src.` imports, package installed via `uv pip install -e .`
-6. **`sentence-transformers` optional** — Avoids 108MB PyTorch download until Phase 2
