@@ -1,8 +1,22 @@
 [project]
 name = "context-rot-monitor"
 version = "0.1.0"
-description = "MCP Server for monitoring, scoring, and remediating context degradation in LLM agent systems."
+description = "MCP Server: The Check Engine Light for LLM Agent Context Windows"
+readme = "README.md"
+authors = [
+    { name = "Kiran Rathod", email = "kiran@example.com" }
+]
+license = { text = "MIT" }
 requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "mcp[cli]>=0.1.0",
     "google-genai>=0.3.0",

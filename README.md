@@ -1,52 +1,85 @@
 
 # Agentic Context Rot Monitor
 
-MCP Server for monitoring, scoring, and remediating context degradation in LLM agent systems.
+**The "Check Engine Light" for your AI Agent's Context Window.**
+
+[![MCP](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+An **MCP Server** that monitors, scores, and remediates **context degradation** ("context rot") in LLM agent systems. It detects when your agent is losing focus, getting clogged with duplicates, or hitting the "Lost-in-the-Middle" danger zone.
 
 ## Features
 
-- **Real-time Context Health Score**: Tracks utilization, relevance, redundancy, and coherence.
-- **Token Metrics**: Detailed breakdown of token usage and limits.
-- **Rot Detection**: Alerts when context quality degrades below thresholds.
+*   **Context Health Score (CHS)**: Real-time 0-100 score of your context quality.
+*   **Rot Detection**: Uses embeddings to detect **Topic Drift** and **Redundancy**.
+*   **Active Remediation**: Tools to **Recommend Pruning** and **Summarize** context.
+*   **Alerts**: Auto-triggers warnings when health drops or redundancy spikes.
+*   **History**: Tracks health trends over time in a local SQLite database.
 
 ## Installation
 
-1. Clone the repository:
-   ```bash
-   git clone <repo_url>
-   cd context-rot-monitor
-   ```
+### Prerequisites
+*   Python 3.10+
+*   `uv` (recommended) or `pip`
 
-2. Create a virtual environment and install dependencies:
-   ```bash
-   # Using uv (recommended)
-   uv venv
-   uv pip install -r pyproject.toml
-   ```
+### Install as MCP Server
+
+**Option 1: Using `uv` (Recommended)**
+```bash
+# Clone the repo
+git clone https://github.com/kiranraathod/context-rot-monitor.git
+cd context-rot-monitor
+
+# Install dependencies (including Phase 2+ features)
+uv pip install -e ".[phase2]"
+```
+
+## Configuration
+
+Set the following environment variables if you want to use Remediation features (Summarization):
+
+```bash
+export GOOGLE_API_KEY="your-gemini-api-key"
+```
 
 ## Usage
 
-### Running the Server
-
-To run the MCP server:
+### 1. Run with `stdio` (Default)
+Ideal for **Gemini CLI**, **Claude Desktop**, or **Cursor**.
 
 ```bash
-# Using standard MCP CLI
-mcp run src/server.py
+uv run python -m src.server
 ```
 
-### Tools
+### 2. Run with `sse` (HTTP)
+Ideal for remote hosting or debugging with **MCP Inspector**.
 
-- `get_token_metrics(context_text, max_window_size)`: Returns token counts and utilization.
-- `analyze_context_health(context_text, step_number)`: Computes a composite health score (0-100).
-
-### Resources
-
-- `rot://health/current`: JSON resource providing the latest health score and status.
-
-## Development
-
-Run tests:
 ```bash
-python -m unittest discover tests
+uv run python -m src.server --transport sse --port 8000
 ```
+
+## Tools & Resources
+
+**Tools**:
+*   `get_token_metrics(context)`: Basic usage stats.
+*   `analyze_context_health(context, goal)`: Full health check (Score, Status, Drill-down).
+*   `detect_context_rot(context, goal)`: Deep-dive report on redundancy/drift.
+*   `recommend_pruning(context)`: Returns indices of junk chunks to cut.
+*   `summarize_context(context)`: LLM-powered compression.
+
+**Resources**:
+*   `rot://health/current`: Real-time health state.
+*   `rot://alerts/active`: Active warnings list.
+*   `rot://metrics/history`: Historical trend data (JSON).
+
+## Architecture
+
+Built with:
+*   **mcp** (FastMCP)
+*   **tiktoken** (Token counting)
+*   **sentence-transformers** (Embeddings/Relevance)
+*   **google-genai** (LLM Summarization)
+*   **sqlite3** (History persistence)
+
+## License
+MIT

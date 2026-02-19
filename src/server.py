@@ -180,8 +180,43 @@ def metrics_history() -> str:
     """
     return get_metrics_history()
 
+
+from src.prompts.templates import DIAGNOSE_ROT_PROMPT, OPTIMIZE_CONTEXT_PROMPT
+import argparse
+
+# Register prompts
+@mcp.prompt("diagnose_rot")
+def diagnose_rot(metrics_json: str) -> str:
+    return DIAGNOSE_ROT_PROMPT.format(metrics_json=metrics_json)
+
+@mcp.prompt("optimize_context")
+def optimize_context(context_text: str) -> str:
+    return OPTIMIZE_CONTEXT_PROMPT.format(context_text=context_text)
+
 def main():
-    mcp.run()
+    parser = argparse.ArgumentParser(description="Context Rot Monitor MCP Server")
+    parser.add_argument(
+        "--transport", 
+        default="stdio", 
+        choices=["stdio", "sse"], 
+        help="Transport protocol to use (stdio or sse)"
+    )
+    parser.add_argument(
+        "--port", 
+        type=int, 
+        default=8000, 
+        help="Port for SSE transport (default: 8000)"
+    )
+    args = parser.parse_args()
+
+    if args.transport == "sse":
+        print(f"Starting SSE server on port {args.port}...")
+        # FastMCP run method handles transport selection if supported,
+        # but the current mcp version might have different API.
+        # Checking FastMCP docs/source implies usage:
+        mcp.run(transport="sse", port=args.port)
+    else:
+        mcp.run(transport="stdio")
 
 if __name__ == "__main__":
     main()
