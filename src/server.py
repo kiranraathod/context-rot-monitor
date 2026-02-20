@@ -184,14 +184,14 @@ def metrics_history() -> str:
 from src.prompts.templates import DIAGNOSE_ROT_PROMPT, OPTIMIZE_CONTEXT_PROMPT
 import argparse
 
-# Register prompts
+# Register prompts (parameter-free so Claude Desktop doesn't show manual input dialogs)
 @mcp.prompt("diagnose_rot")
-def diagnose_rot(metrics_json: str) -> str:
-    return DIAGNOSE_ROT_PROMPT.format(metrics_json=metrics_json)
+def diagnose_rot() -> str:
+    return DIAGNOSE_ROT_PROMPT
 
 @mcp.prompt("optimize_context")
-def optimize_context(context_text: str) -> str:
-    return OPTIMIZE_CONTEXT_PROMPT.format(context_text=context_text)
+def optimize_context() -> str:
+    return OPTIMIZE_CONTEXT_PROMPT
 
 def main():
     parser = argparse.ArgumentParser(description="Context Rot Monitor MCP Server")
